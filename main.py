@@ -41,7 +41,7 @@ def generate_password():
 
 def save():
     username = email_entry.get()
-    website = website_entry.get()
+    website = website_entry.get().title()
     password = password_entry.get()
 
     if not website:  # no email was entered
@@ -51,9 +51,10 @@ def save():
     elif not password:  # no password was entered
         messagebox.showinfo(title='Oops', message='enter a password')
     else:
-        is_okay = messagebox.askokcancel(title='confirm entries', message=f'Please confirm the user-name and '
-                                                                          f'password\n\n user-name:  {username}\n '
-                                                                          f'password: {password}')
+        is_okay = messagebox.askokcancel(title=f'confirm entries for {website}',
+                                         message=f'Please confirm the user-name and '
+                                                 f'password\n\n user-name:  {username}\n '
+                                                 f'password: {password}')
         if is_okay:
             # create the data to be entered into the json file
             new_data = {
@@ -62,11 +63,43 @@ def save():
                     'password': password
                 }
             }
-            with open("data.json", "w") as data_file:
-                json.dump(new_data, data_file)
-                # data_file.write(f'{website} | {username} | {password}\n')
-            website_entry.delete(0, END)
-            password_entry.delete(0, END)
+            try:
+                with open('data.json', 'r') as data_file:
+                    # read old data
+                    data = json.load(data_file)  # do only one thing here that can fail so you catch it
+            except FileNotFoundError:  # file not yet created, we shall create it now and dump our data
+                with open("data.json", "w") as data_file:  # create this file and dump that new data (first entry)
+                    json.dump(new_data, data_file, indent=4)
+                    # data_file.write(f'{website} | {username} | {password}\n')
+            else:  # file exists so we read its data and updated that data, so now we must dump it there
+                with open('data.json', 'w') as data_file:
+                    data.update(new_data)  # add to the dictionary that we got from the json file
+                    json.dump(data, data_file, indent=4)
+            finally:  # clear the entry fields
+                website_entry.delete(0, END)
+                password_entry.delete(0, END)
+                messagebox.showinfo(title='Password saved', message='Your entries have been saved successfully')
+
+
+def find_password():
+    if not website_entry.get():  # if no website was entered to search
+        messagebox.showinfo(title='website not entered', message='Enter a website to search password')
+    else:
+        try: # makes sure the file of passwords actually exists
+            with open('data.json', 'r') as data_file:
+                data = json.load(data_file)
+        except FileNotFoundError:
+            messagebox.showinfo(title='Password Vault Empty', message='Store some passwords first')
+        else:
+            site = website_entry.get().title()
+            print(site)
+            try:  # check if site is in the dictionary return from json.load
+                username = data[site]['email']
+                password = data[site]['password']
+            except KeyError: # the website is not in our file
+                messagebox.showinfo(title='Not found', message=f'No details for {site} in vault')
+            else:
+                messagebox.showinfo(title=site, message=f'Username: {username} \n Password: {password}')
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -95,21 +128,25 @@ my_label = Label(text='@Hamza Works', fg='#ec4646')
 my_label.grid(column=2, row=6)
 
 # entries
-website_entry = Entry(width=43)
-website_entry.grid(column=1, row=1, columnspan=2)
+website_entry = Entry(width=24)
+website_entry.grid(column=1, row=1, padx=10, pady=10)
 website_entry.focus()
 
-email_entry = Entry(width=43)
-email_entry.grid(column=1, row=2, columnspan=2)
+email_entry = Entry(width=47)
+email_entry.grid(column=1, row=2, columnspan=2, padx=10, pady=10)
 email_entry.insert(0, 'sanshinehamza@gmail.com')
-password_entry = Entry(width=25)
-password_entry.grid(column=1, row=3)
+
+password_entry = Entry(width=24)
+password_entry.grid(column=1, row=3, columnspan=1, padx=15, pady=15)
 
 # buttons
+Search = Button(text='Search', width=13, highlightthickness=0, command=find_password)
+Search.grid(column=2, row=1)
+
 generate_password_button = Button(text='Generate Password', highlightthickness=0, width=15, command=generate_password)
-generate_password_button.grid(column=2, row=3)
+generate_password_button.grid(column=2, row=3, padx=10, pady=10)
 
 add_button = Button(text='Add', width=36, highlightthickness=0, command=save)
-add_button.grid(column=1, row=4, columnspan=2)
+add_button.grid(column=1, row=4, columnspan=2, padx=10)
 
 window.mainloop()
