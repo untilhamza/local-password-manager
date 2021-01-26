@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import messagebox
 import pyperclip
-
+import json
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 # Password Generator Project
 import random
@@ -28,7 +28,8 @@ def generate_password():
     password_list = password_list + [random.choice(numbers) for _ in range(nr_numbers)]
 
     random.shuffle(password_list)
-    password = ''.join(password_list)  # join just joins elements inthe sequence together with the separation btn the ''
+    password = ''.join(password_list)  # join just joins elements in the sequence together with the separation btn
+    # the ''
 
     # print(f"Your password is: {password}")
     password_entry.insert(0, password)
@@ -51,11 +52,19 @@ def save():
         messagebox.showinfo(title='Oops', message='enter a password')
     else:
         is_okay = messagebox.askokcancel(title='confirm entries', message=f'Please confirm the user-name and '
-                                                                          f'password\n\n '
-                                                                          f'user-name:  {username}\n password: {password}')
+                                                                          f'password\n\n user-name:  {username}\n '
+                                                                          f'password: {password}')
         if is_okay:
-            with open('password_manager.txt', 'a+') as data_file:
-                data_file.write(f'{website} | {username} | {password}\n')
+            # create the data to be entered into the json file
+            new_data = {
+                website: {  # top level key is website for searching our entries
+                    'email': username,
+                    'password': password
+                }
+            }
+            with open("data.json", "w") as data_file:
+                json.dump(new_data, data_file)
+                # data_file.write(f'{website} | {username} | {password}\n')
             website_entry.delete(0, END)
             password_entry.delete(0, END)
 
@@ -81,6 +90,9 @@ email_label.grid(column=0, row=2)
 
 password_label = Label(text='Password')
 password_label.grid(column=0, row=3)
+
+my_label = Label(text='@Hamza Works', fg='#ec4646')
+my_label.grid(column=2, row=6)
 
 # entries
 website_entry = Entry(width=43)
